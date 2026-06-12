@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, Customer, formatReg, Vehicle } from '../../src/api';
+import { DatePicker } from '../../src/components/DatePicker';
 import { Button, Card, Chip, ErrorText, Input, Label, Loading } from '../../src/components/ui';
 import { useSession } from '../../src/session';
 import { colors, radius, spacing } from '../../src/theme';
@@ -266,10 +267,8 @@ export default function NewJob() {
                 multiline
                 style={{ minHeight: 70, paddingTop: spacing(3), textAlignVertical: 'top' }}
               />
-              <View style={{ flexDirection: 'row', gap: spacing(2) }}>
-                <Input value={delivery} onChangeText={setDelivery} placeholder="Est. delivery (2026-06-20)" style={{ flex: 3 }} />
-                <Input value={cost} onChangeText={setCost} placeholder="₹ Estimate" keyboardType="number-pad" style={{ flex: 2 }} />
-              </View>
+              <DatePicker value={delivery} onChange={setDelivery} placeholder="Estimated delivery date" />
+              <Input value={cost} onChangeText={setCost} placeholder="₹ Estimate" keyboardType="number-pad" />
               <Input
                 value={tasksText}
                 onChangeText={setTasksText}
