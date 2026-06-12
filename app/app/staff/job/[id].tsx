@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, formatDateTime, formatMoney, formatReg, JobDetail } from '../../../src/api';
+import { DatePicker } from '../../../src/components/DatePicker';
 import { Button, Card, Chip, ErrorText, Input, Label, Loading, Plate } from '../../../src/components/ui';
 import { useSession } from '../../../src/session';
 import { colors, radius, spacing } from '../../../src/theme';
@@ -24,6 +25,7 @@ export default function StaffJob() {
   const [updateText, setUpdateText] = useState('');
   const [newTask, setNewTask] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -123,6 +125,16 @@ export default function StaffJob() {
           </View>
 
           <View style={styles.section}>
+            <Label>Estimated delivery</Label>
+            <DatePicker
+              value={job.estimated_delivery ?? ''}
+              onChange={(date) =>
+                run(() => api.staff.updateJob(staffPin, job.id, { estimated_delivery: date || null }))
+              }
+            />
+          </View>
+
+          <View style={styles.section}>
             <Label>
               Checklist · {job.tasks.filter((t) => t.done).length}/{job.tasks.length}
             </Label>
@@ -202,6 +214,33 @@ export default function StaffJob() {
               ))}
             </View>
           </View>
+
+          <View style={styles.section}>
+            <Button
+              variant="danger"
+              title={confirmDelete ? 'TAP AGAIN TO DELETE PERMANENTLY' : 'DELETE JOB'}
+              loading={busy}
+              onPress={async () => {
+                if (!confirmDelete) {
+                  setConfirmDelete(true);
+                  setTimeout(() => setConfirmDelete(false), 3500);
+                  return;
+                }
+                setBusy(true);
+                try {
+                  await api.staff.deleteJob(staffPin, job.id);
+                  router.replace('/staff');
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : 'Could not delete job');
+                  setBusy(false);
+                  setConfirmDelete(false);
+                }
+              }}
+            />
+            <Text style={styles.deleteHint}>
+              Removes the job, its checklist and updates. The customer will no longer see it.
+            </Text>
+          </View>
         </ScrollView>
       ) : null}
     </KeyboardAvoidingView>
@@ -255,4 +294,11 @@ const styles = StyleSheet.create({
   updateStage: { color: colors.orange, fontSize: 11, fontWeight: '800' },
   updateTime: { color: colors.muted, fontSize: 11 },
   updateMsg: { color: colors.text, fontSize: 14, lineHeight: 21 },
+  deleteHint: {
+    color: colors.muted,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: spacing(2),
+    lineHeight: 17,
+  },
 });

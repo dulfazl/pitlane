@@ -219,22 +219,58 @@ app.post('/api/staff/jobs', requireStaff, (req, res) => {
 app.patch('/api/staff/jobs/:id', requireStaff, (req, res) => {
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found' });
-  const stageIndex = Number(req.body?.stage_index);
-  if (!Number.isInteger(stageIndex) || stageIndex < 0 || stageIndex >= STAGES.length) {
-    return res.status(400).json({ error: 'Invalid stage' });
+  const body = req.body || {};
+  let changed = false;
+
+  if (body.stage_index !== undefined) {
+    const stageIndex = Number(body.stage_index);
+    if (!Number.isInteger(stageIndex) || stageIndex < 0 || stageIndex >= STAGES.length) {
+      return res.status(400).json({ error: 'Invalid stage' });
+    }
+    const delivered = stageIndex === STAGES.length - 1;
+    db.prepare(
+      `UPDATE jobs SET stage_index = ?, updated_at = datetime('now'),
+       completed_at = ${delivered ? "datetime('now')" : 'NULL'} WHERE id = ?`
+    ).run(stageIndex, job.id);
+    const message = String(body.message || '').trim() || `Status updated: ${STAGES[stageIndex].label}`;
+    db.prepare('INSERT INTO job_updates (job_id, stage_index, message) VALUES (?, ?, ?)').run(
+      job.id,
+      stageIndex,
+      message
+    );
+    changed = true;
   }
-  const delivered = stageIndex === STAGES.length - 1;
-  db.prepare(
-    `UPDATE jobs SET stage_index = ?, updated_at = datetime('now'),
-     completed_at = ${delivered ? "datetime('now')" : 'NULL'} WHERE id = ?`
-  ).run(stageIndex, job.id);
-  const message = String(req.body?.message || '').trim() || `Status updated: ${STAGES[stageIndex].label}`;
-  db.prepare('INSERT INTO job_updates (job_id, stage_index, message) VALUES (?, ?, ?)').run(
-    job.id,
-    stageIndex,
-    message
-  );
+
+  if (body.estimated_delivery !== undefined) {
+    const value = body.estimated_delivery;
+    if (value !== null && value !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+      return res.status(400).json({ error: 'Invalid delivery date' });
+    }
+    db.prepare("UPDATE jobs SET estimated_delivery = ?, updated_at = datetime('now') WHERE id = ?").run(
+      value || null,
+      job.id
+    );
+    changed = true;
+  }
+
+  if (body.cost_estimate !== undefined) {
+    const cost = body.cost_estimate === null ? null : Number(body.cost_estimate);
+    if (cost !== null && (!Number.isFinite(cost) || cost < 0)) {
+      return res.status(400).json({ error: 'Invalid cost estimate' });
+    }
+    db.prepare("UPDATE jobs SET cost_estimate = ?, updated_at = datetime('now') WHERE id = ?").run(cost, job.id);
+    changed = true;
+  }
+
+  if (!changed) return res.status(400).json({ error: 'Nothing to update' });
   res.json(jobWithDetails(job.id));
+});
+
+app.delete('/api/staff/jobs/:id', requireStaff, (req, res) => {
+  const job = db.prepare('SELECT id FROM jobs WHERE id = ?').get(req.params.id);
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  db.prepare('DELETE FROM jobs WHERE id = ?').run(job.id);
+  res.json({ ok: true });
 });
 
 app.post('/api/staff/jobs/:id/updates', requireStaff, (req, res) => {

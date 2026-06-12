@@ -159,6 +159,21 @@ export const api = {
         headers: { 'x-staff-pin': pin },
         body: JSON.stringify({ stage_index, message }),
       }),
+    updateJob: (
+      pin: string,
+      jobId: number,
+      data: { estimated_delivery?: string | null; cost_estimate?: number | null }
+    ) =>
+      request<JobDetail>(`/api/staff/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'x-staff-pin': pin },
+        body: JSON.stringify(data),
+      }),
+    deleteJob: (pin: string, jobId: number) =>
+      request<{ ok: true }>(`/api/staff/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: { 'x-staff-pin': pin },
+      }),
     postUpdate: (pin: string, jobId: number, message: string) =>
       request<JobDetail>(`/api/staff/jobs/${jobId}/updates`, {
         method: 'POST',
