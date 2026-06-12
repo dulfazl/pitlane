@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #0A0A0A; }
+  .stage { width: 390px; margin: 0 auto; padding-top: 140px; }
+  svg { width: 100%; display: block; }
+</style>
+</head>
+<body>
+<div class="stage">
+<svg id="art" viewBox="0 505 1400 895" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E04E00"/>
+      <stop offset="1" stop-color="#FF8A2A"/>
+    </linearGradient>
+    <linearGradient id="skid" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF6A00" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#FF6A00" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#FF6A00" stop-opacity="0.95"/>
+    </linearGradient>
+    <filter id="smoke" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <filter id="smokeSoft" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+  </defs>
+
+  <!-- drift skid marks: trails start at each tire and sweep away behind the slide -->
+  <g fill="none" stroke="url(#skid)" stroke-linecap="round">
+    <path d="M 60,1005 C 300,1090 480,930 588,712" stroke-width="26"/>
+    <path d="M 240,1135 C 560,1190 850,960 988,665" stroke-width="26"/>
+    <path d="M 30,1060 C 290,1160 520,980 600,740" stroke-width="12" opacity="0.45"/>
+  </g>
+
+  <!-- tire smoke at the rear wheel, trailing the slide -->
+  <g fill="#FFFFFF">
+    <circle cx="545" cy="745" r="62" opacity="0.10" filter="url(#smokeSoft)"/>
+    <circle cx="475" cy="785" r="50" opacity="0.08" filter="url(#smokeSoft)"/>
+    <circle cx="595" cy="705" r="42" opacity="0.14" filter="url(#smoke)"/>
+    <circle cx="625" cy="740" r="30" opacity="0.16" filter="url(#smoke)"/>
+  </g>
+  <circle cx="560" cy="735" r="44" fill="#FF6A00" opacity="0.08" filter="url(#smokeSoft)"/>
+
+  <!-- speed lines behind the car (echo the logo stripes) -->
+  <g fill="#FF6A00">
+    <rect x="195" y="610" width="150" height="16" rx="8" opacity="0.85"/>
+    <rect x="255" y="650" width="95" height="16" rx="8" opacity="0.55"/>
+    <rect x="160" y="572" width="80" height="14" rx="7" opacity="0.4"/>
+  </g>
+
+  <!-- car: low coupe, side view facing right, rotated for the drift -->
+  <g transform="translate(430,560) rotate(-7)">
+    <!-- body -->
+    <path fill="url(#body)" d="
+      M 20,138
+      C 12,128 10,112 16,104
+      C 22,96 30,92 44,90
+      C 52,72 64,58 90,52
+      C 150,30 230,28 300,40
+      C 330,44 360,56 392,70
+      C 470,74 540,82 588,92
+      C 614,97 630,104 634,112
+      C 638,120 636,130 628,138
+      L 600,142
+      C 596,116 576,98 550,98
+      C 524,98 504,116 500,142
+      L 196,142
+      C 192,116 172,98 146,98
+      C 120,98 100,116 96,142
+      L 28,142
+      Z"/>
+    <!-- glass -->
+    <path fill="#0A0A0A" d="M 118,56 C 170,38 240,36 296,46 L 360,68 L 250,72 L 140,70 Z" opacity="0.92"/>
+    <!-- sill line -->
+    <rect x="210" y="112" width="270" height="7" rx="3.5" fill="#0A0A0A" opacity="0.25"/>
+    <!-- wheels -->
+    <g>
+      <circle cx="146" cy="142" r="34" fill="#0D0D0D" stroke="#2E2E2E" stroke-width="5"/>
+      <circle cx="146" cy="142" r="13" fill="none" stroke="#FF6A00" stroke-width="5"/>
+      <circle cx="550" cy="142" r="34" fill="#0D0D0D" stroke="#2E2E2E" stroke-width="5"/>
+      <circle cx="550" cy="142" r="13" fill="none" stroke="#FF6A00" stroke-width="5"/>
+    </g>
+    <!-- headlight slash -->
+    <path d="M 600,98 L 626,106" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+  </g>
+
+  <!-- wordmark -->
+  <image href="{{WORDMARK}}" x="280" y="1235" width="840" height="151"/>
+</svg>
+</div>
+
+<script>
+  async function exportPNG(name, scale) {
+    const svg = document.getElementById('art');
+    const xml = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([xml], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    await new Promise((ok, err) => { img.onload = ok; img.onerror = err; img.src = url; });
+    const vb = svg.viewBox.baseVal;
+    const c = document.createElement('canvas');
+    c.width = vb.width * scale; c.height = vb.height * scale;
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const dataUrl = c.toDataURL('image/png');
+    const res = await fetch('/save', { method: 'POST', body: JSON.stringify({ name, dataUrl }) });
+    return res.text();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: pitlane-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: STAFF_PIN
+        sync: false
