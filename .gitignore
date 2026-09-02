@@ -10,3 +10,8 @@ android/
 # local database
 server/pitlane.db
 server/pitlane.db-*
+
+# secrets
+.env
+.env.*
+!.env.example
